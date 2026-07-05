@@ -198,6 +198,7 @@ export default function JobFeed({ profile, settings }: Props) {
   const scoredCount = Object.keys(scores).length;
   const activeJob = coverLetterId !== null ? jobs.find(j => j.id === coverLetterId) : null;
   const prepJob   = prepId        !== null ? jobs.find(j => j.id === prepId)        : null;
+  if (coverLetterId !== null) console.log("coverLetterId:", coverLetterId, "activeJob:", activeJob, "jobs ids:", jobs.map(j => j.id));
 
   return (
     <div className="feed-page">
