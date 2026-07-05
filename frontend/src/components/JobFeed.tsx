@@ -2,10 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   fetchJobs, getSavedJobs, deleteJob, scoreJobs,
   updateJobStatus, getCompanyBrief, estimateSalary,
+  generateCoverLetter, getInterviewPrep,
 } from "../api";
 import type { Job, Profile, UserSettings, SearchPreset } from "../api";
-import CoverLetterModal from "./CoverLetterModal";
-import InterviewPrepModal from "./InterviewPrepModal";
 
 interface Props { profile: Profile | null; settings: UserSettings; }
 
@@ -97,8 +96,6 @@ export default function JobFeed({ profile, settings }: Props) {
   const [scoringIds,    setScoringIds]    = useState<Set<number>>(new Set());
   const [expanded,      setExpanded]      = useState<Set<number>>(new Set());
   const [appliedIds,    setAppliedIds]    = useState<Set<number>>(new Set());
-  const [coverLetterId, setCoverLetterId] = useState<number | null>(null);
-  const [prepId,        setPrepId]        = useState<number | null>(null);
   const [error,         setError]         = useState<string | null>(null);
   const [scoreError,    setScoreError]    = useState<string | null>(null);
   const scoringRef = useRef(false);
@@ -193,12 +190,58 @@ export default function JobFeed({ profile, settings }: Props) {
 
   const updateJob = (updated: Job) => setJobs(prev => prev.map(j => j.id === updated.id ? updated : j));
 
+  const openCoverLetter = async (job: Job) => {
+    const w = window.open("", "_blank");
+    if (w) w.document.write("<p style='font-family:sans-serif;padding:24px;color:#555'>Generating cover letter…</p>");
+    try {
+      const r = await generateCoverLetter(job.id);
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Cover Letter – ${job.company_name || "Company"}</title>
+      <style>body{font-family:Georgia,serif;max-width:740px;margin:60px auto;padding:0 24px;line-height:1.9;color:#1a1a1a;font-size:16px;}
+      h1{font-size:20px;color:#333;margin-bottom:8px;}p.sub{color:#666;font-size:14px;margin-bottom:36px;}
+      pre{white-space:pre-wrap;word-wrap:break-word;font-family:Georgia,serif;font-size:16px;}
+      button{margin-top:32px;padding:10px 22px;background:#7c3aed;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;}
+      </style></head><body>
+      <h1>Cover Letter</h1>
+      <p class="sub">${job.job_title || "Role"} · ${job.company_name || "Company"}</p>
+      <pre>${(r.cover_letter || "").replace(/&/g,"&amp;").replace(/</g,"&lt;")}</pre>
+      <button onclick="navigator.clipboard.writeText(document.querySelector('pre').innerText).then(()=>this.textContent='Copied!')">Copy to Clipboard</button>
+      </body></html>`;
+      if (w) { w.document.open(); w.document.write(html); w.document.close(); }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to generate cover letter.";
+      if (w) w.document.write(`<p style='color:red;font-family:sans-serif;padding:24px'>Error: ${msg}</p>`);
+    }
+  };
+
+  const openInterviewPrep = async (job: Job) => {
+    const w = window.open("", "_blank");
+    if (w) w.document.write("<p style='font-family:sans-serif;padding:24px;color:#555'>Generating interview questions…</p>");
+    try {
+      const r = await getInterviewPrep(job.id);
+      const qs = r.questions as Array<{question:string; category:string; tip?:string; sample_answer?:string}>;
+      const rows = qs.map((q, i) => `
+        <div style="border:1px solid #e0e0e0;border-radius:10px;padding:18px 20px;margin-bottom:14px;">
+          <div style="font-size:12px;color:#7c3aed;font-weight:700;margin-bottom:6px;">${q.category?.toUpperCase() || "GENERAL"}</div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:10px;">Q${i+1}. ${q.question.replace(/</g,"&lt;")}</div>
+          ${q.tip ? `<div style="background:#f5f0ff;border-radius:7px;padding:10px 14px;font-size:14px;color:#5b21b6;margin-bottom:8px;">💡 ${q.tip.replace(/</g,"&lt;")}</div>` : ""}
+          ${q.sample_answer ? `<div style="background:#f0fdf4;border-radius:7px;padding:10px 14px;font-size:14px;color:#166534;">✅ ${q.sample_answer.replace(/</g,"&lt;")}</div>` : ""}
+        </div>`).join("");
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Interview Prep – ${job.company_name||"Company"}</title>
+      <style>body{font-family:system-ui,sans-serif;max-width:780px;margin:48px auto;padding:0 24px;color:#1a1a1a;}
+      h1{font-size:22px;margin-bottom:6px;}p.sub{color:#666;font-size:14px;margin-bottom:32px;}</style></head>
+      <body><h1>🎤 Interview Prep</h1>
+      <p class="sub">${job.job_title||"Role"} · ${job.company_name||"Company"} · ${qs.length} questions</p>
+      ${rows}</body></html>`;
+      if (w) { w.document.open(); w.document.write(html); w.document.close(); }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to generate questions.";
+      if (w) w.document.write(`<p style='color:red;font-family:sans-serif;padding:24px'>Error: ${msg}</p>`);
+    }
+  };
+
   const noProfile = !profile;
   const canSearch = !noProfile && !!jobTitle.trim() && !!location.trim() && !fetchingJobs;
   const scoredCount = Object.keys(scores).length;
-  const activeJob = coverLetterId !== null ? jobs.find(j => j.id === coverLetterId) : null;
-  const prepJob   = prepId        !== null ? jobs.find(j => j.id === prepId)        : null;
-  if (coverLetterId !== null) console.log("coverLetterId:", coverLetterId, "activeJob:", activeJob, "jobs ids:", jobs.map(j => j.id));
 
   return (
     <div className="feed-page">
@@ -378,10 +421,10 @@ export default function JobFeed({ profile, settings }: Props) {
                 >
                   {appliedIds.has(job.id) ? "✓ Applied" : "Apply Now"}
                 </button>
-                <button className="btn-ai-action btn-ai-cover" onClick={() => setCoverLetterId(job.id)}>
+                <button className="btn-ai-action btn-ai-cover" onClick={() => openCoverLetter(job)}>
                   ✉ Cover Letter
                 </button>
-                <button className="btn-ai-action btn-ai-prep" onClick={() => setPrepId(job.id)}>
+                <button className="btn-ai-action btn-ai-prep" onClick={() => openInterviewPrep(job)}>
                   🎤 Interview Prep
                 </button>
               </div>
@@ -390,23 +433,6 @@ export default function JobFeed({ profile, settings }: Props) {
         })}
       </div>
 
-      {/* Modals */}
-      {coverLetterId !== null && activeJob && (
-        <CoverLetterModal
-          jobId={coverLetterId}
-          jobTitle={activeJob.job_title}
-          companyName={activeJob.company_name}
-          onClose={() => setCoverLetterId(null)}
-        />
-      )}
-      {prepId !== null && prepJob && (
-        <InterviewPrepModal
-          jobId={prepId}
-          jobTitle={prepJob.job_title}
-          companyName={prepJob.company_name}
-          onClose={() => setPrepId(null)}
-        />
-      )}
     </div>
   );
 }
