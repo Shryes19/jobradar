@@ -31,6 +31,9 @@ export default function InterviewPrepModal({ jobId, jobTitle, companyName, onClo
   const [activeCat, setActiveCat] = useState<string>("all");
 
   useEffect(() => {
+    setQuestions([]);
+    setError(null);
+    setLoading(true);
     getInterviewPrep(jobId)
       .then(r => setQuestions(r.questions as PrepQuestion[]))
       .catch(e => setError(e.message || "Failed to generate questions."))

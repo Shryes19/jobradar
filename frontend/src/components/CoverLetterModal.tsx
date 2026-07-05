@@ -15,6 +15,9 @@ export default function CoverLetterModal({ jobId, jobTitle, companyName, onClose
   const [copied,  setCopied]  = useState(false);
 
   useEffect(() => {
+    setText(null);
+    setError(null);
+    setLoading(true);
     generateCoverLetter(jobId)
       .then(r => setText(r.cover_letter))
       .catch(e => setError(e.message || "Failed to generate cover letter."))
