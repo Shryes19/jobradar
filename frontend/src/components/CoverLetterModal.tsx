@@ -50,7 +50,7 @@ export default function CoverLetterModal({ jobId, jobTitle, companyName, onClose
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
+      <div className="modal" style={{background:"#1e1b2e", color:"#f0f0f5"}}>
         <div className="modal-head">
           <div>
             <h2 className="modal-title">✉ Cover Letter</h2>
