@@ -167,6 +167,7 @@ function AppShell() {
   const [ready, setReady]               = useState(false);
   const [authUser, setAuthUser]         = useState<AuthUser | null>(null);
   const [showAuth, setShowAuth]         = useState(false);
+  const [menuOpen, setMenuOpen]         = useState(false);
   const { addToast } = useToast();
 
   // Boot: check token → load user/profile/settings
@@ -280,12 +281,14 @@ function AppShell() {
   return (
     <div className="app">
       <header className="navbar">
-        <div className="navbar-brand" onClick={() => setShowLanding(true)} style={{ cursor: "pointer" }}>
+        <div className="navbar-brand" onClick={() => { setShowLanding(true); setMenuOpen(false); }} style={{ cursor: "pointer" }}>
           <div className="brand-logo">🎯</div>
           <span className="brand-name">JobRadar</span>
+          <span className="brand-version">Beta</span>
         </div>
 
-        <nav className="nav-links">
+        {/* Desktop nav */}
+        <nav className="nav-links nav-links-desktop">
           {TABS.map((t, i) => (
             <button
               key={t.id}
@@ -301,16 +304,72 @@ function AppShell() {
         </nav>
 
         <div className="navbar-right">
-          <div className="user-chip">
+          {/* Desktop: user chip + settings + sign out */}
+          <div className="user-chip nav-desktop-only">
             <div className="user-avatar">{avatarChar}</div>
             <span className="user-name">{displayName}</span>
           </div>
-          <button className="btn-icon" onClick={() => setShowSettings(true)} title="Settings">⚙</button>
-          <button className="btn btn-ghost btn-sm" onClick={handleLogout} title="Sign out">
+          <button className="btn-icon nav-desktop-only" onClick={() => setShowSettings(true)} title="Settings">⚙</button>
+          <button className="btn btn-ghost btn-sm nav-desktop-only" onClick={handleLogout} title="Sign out">
             Sign Out
+          </button>
+
+          {/* Mobile: hamburger */}
+          <button
+            className={`btn-hamburger nav-mobile-only${menuOpen ? " open" : ""}`}
+            onClick={() => setMenuOpen(o => !o)}
+            aria-label="Toggle menu"
+            aria-expanded={menuOpen}
+          >
+            <span /><span /><span />
           </button>
         </div>
       </header>
+
+      {/* Mobile dropdown menu */}
+      {menuOpen && (
+        <div className="mobile-menu" onClick={() => setMenuOpen(false)}>
+          <div className="mobile-menu-inner" onClick={e => e.stopPropagation()}>
+            {/* User identity */}
+            <div className="mobile-menu-user">
+              <div className="user-avatar mobile-avatar">{avatarChar}</div>
+              <div>
+                <div className="mobile-user-name">{displayName}</div>
+                <div className="mobile-user-email">{authUser?.email ?? ""}</div>
+              </div>
+            </div>
+
+            <div className="mobile-menu-divider" />
+
+            {/* Nav items */}
+            {TABS.map((t, i) => (
+              <button
+                key={t.id}
+                className={`mobile-nav-item${tab === t.id ? " active" : ""}`}
+                onClick={() => { setTab(t.id); setMenuOpen(false); }}
+              >
+                <span className="mobile-nav-icon">{t.icon}</span>
+                <span className="mobile-nav-label">{t.label}</span>
+                {i === 0 && profile && <span className="nav-dot" style={{ marginLeft: "auto" }} />}
+                {tab === t.id && <span className="mobile-nav-check">✓</span>}
+              </button>
+            ))}
+
+            <div className="mobile-menu-divider" />
+
+            {/* Settings + Sign out */}
+            <button className="mobile-nav-item" onClick={() => { setShowSettings(true); setMenuOpen(false); }}>
+              <span className="mobile-nav-icon">⚙</span>
+              <span className="mobile-nav-label">Settings</span>
+            </button>
+            <button className="mobile-nav-item mobile-nav-danger" onClick={() => { handleLogout(); setMenuOpen(false); }}>
+              <span className="mobile-nav-icon">↩</span>
+              <span className="mobile-nav-label">Sign Out</span>
+            </button>
+          </div>
+        </div>
+      )}
+
 
       <main className={tab === "tracker" ? "page page-wide" : "page"}>
         {tab === "upload" && (
