@@ -466,8 +466,8 @@ export default function Settings({ settings, onClose, onSaved }: Props) {
           {section === "apikeys"  && <ApiKeysTab />}
           {section === "alerts"   && <ScheduledSearchesTab />}
 
-          {!isAlertsSection && section !== "apikeys" && error   && <div className="banner banner-error" style={{ marginTop: 8 }}><span>⚠️</span><span>{error}</span></div>}
-          {!isAlertsSection && section !== "apikeys" && success && <div className="banner banner-info"  style={{ marginTop: 8 }}><span>✓</span><span>Preferences saved successfully.</span></div>}
+          {!isAlertsSection && error   && <div className="banner banner-error" style={{ marginTop: 8 }}><span>⚠️</span><span>{error}</span></div>}
+          {!isAlertsSection && success && <div className="banner banner-info"  style={{ marginTop: 8 }}><span>✓</span><span>Preferences saved successfully.</span></div>}
         </div>
 
         <div className="settings-footer">

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import UploadCV from "./components/UploadCV";
 import JobFeed from "./components/JobFeed";
 import Tracker from "./components/Tracker";
