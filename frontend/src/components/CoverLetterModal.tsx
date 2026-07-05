@@ -19,8 +19,14 @@ export default function CoverLetterModal({ jobId, jobTitle, companyName, onClose
     setError(null);
     setLoading(true);
     generateCoverLetter(jobId)
-      .then(r => setText(r.cover_letter))
-      .catch(e => setError(e.message || "Failed to generate cover letter."))
+      .then(r => {
+        console.log("Cover letter response:", r);
+        setText(r.cover_letter || "(empty response from AI)");
+      })
+      .catch(e => {
+        console.error("Cover letter error:", e);
+        setError(e.message || "Failed to generate cover letter.");
+      })
       .finally(() => setLoading(false));
   }, [jobId]);
 
