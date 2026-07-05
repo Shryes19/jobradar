@@ -1068,7 +1068,7 @@
   animation:fadeIn .14s var(--ease);
 }
 .modal {
-  background:var(--surface); border:1px solid var(--border-md);
+  background:#16162a; border:1px solid var(--border-md);
   border-radius:var(--r-xl); width:100%; max-width:640px; max-height:90vh;
   display:flex; flex-direction:column;
   box-shadow:0 36px 80px rgba(0,0,0,.65);
