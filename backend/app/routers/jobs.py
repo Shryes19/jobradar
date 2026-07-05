@@ -1,6 +1,9 @@
+import logging
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
+
+logger = logging.getLogger(__name__)
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Job, Profile, User
@@ -348,6 +351,7 @@ INSTRUCTIONS:
         text = await loop.run_in_executor(None, _call)
         return {"cover_letter": text, "job_title": job.job_title, "company_name": job.company_name}
     except Exception as e:
+        logger.exception("Cover letter generation failed")
         raise HTTPException(status_code=502, detail=f"Could not generate cover letter: {str(e)}")
 
 
@@ -487,6 +491,7 @@ IMPORTANT: Return ONLY a valid JSON array. Use double quotes. Do not use apostro
     except EnvironmentError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
+        logger.exception("Interview prep generation failed")
         raise HTTPException(status_code=502, detail=f"Could not generate interview prep: {str(e)}")
 
 
